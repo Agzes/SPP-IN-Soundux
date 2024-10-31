@@ -1,0 +1,4 @@
+dearpygui
+requests_html
+fake_useragent
+ctypes
