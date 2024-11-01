@@ -118,8 +118,8 @@ def update_combo():
 def add_element():
     global data
     file_path = "data.json"
-    name = dpg.get_value("Name_input")
-    value = dpg.get_value("Path-to-folder_input")
+    name = to_cyr(dpg.get_value("Name_input"))
+    value = to_cyr(dpg.get_value("Path-to-folder_input"))
     if name == "":
         messagebox.showerror("SPP-IN-Soundux", "Error: The name is empty!")
         return
@@ -139,7 +139,7 @@ def add_element():
 def remove_element():
     global data
     file_path = "data.json"
-    name = dpg.get_value("element_selector")
+    name = to_cyr(dpg.get_value("element_selector"))
     data = []
     if os.path.exists(file_path):
         try:
@@ -211,6 +211,8 @@ def unsetup_registry():
 
 def download_file(url):
     global temp_file_path
+    if "meowpad.pw" in url:
+        url = url.split('?')[0]
     file_extension = os.path.splitext(url)[-1]
     temp_dir = tempfile.gettempdir()
     temp_file_path = os.path.join(temp_dir, f"temp_file_from_spp-in-soundux{file_extension}")
@@ -264,11 +266,20 @@ def _help(message):
     with dpg.tooltip(t):
         dpg.add_text(message)
 def Init_Before_UI_Init(): 
-    window_effect.setRoundedCorners(get_hwnd(), 10)
-    input_font = init_font_with_cyr_support(dpg=dpg, font_path=os.path.join(data_folder,"Fonts","base.ttf"), font_registry=font_registry) 
     if is_url_extracted:
         download_thread = threading.Thread(target=download_file, args=(extracted_url,))
         download_thread.start()
+    window_effect.setRoundedCorners(get_hwnd(), 10)
+
+def Init_After_UI_Init():
+    input_font = init_font_with_cyr_support(dpg=dpg, font_path=os.path.join(data_folder,"Fonts","base.ttf"), size=17, font_registry=font_registry) 
+    if select_name:
+        dpg.bind_item_font(select_name, input_font)
+    if select_folder_input:
+        dpg.bind_item_font(select_folder_input, input_font)
+    try:
+        dpg.set_value("select_folder", "-")
+    except: pass
 
 lw,lh,lc,ld = dpg.load_image(os.path.join(data_folder,"assets","soundux.png"))
 dw,dh,dc,dd = dpg.load_image(os.path.join(data_folder,"assets","soundpad.png"))
@@ -319,9 +330,11 @@ link_for_program = link_for.replace("http://", "")
 name = extracted_url.replace("%20", " ")
 name_for = name.rsplit('/', 1)[-1]
 name_for_file = name_for.split('.')[0]
+print(name_for_file)
+if "meowpad.pw" in extracted_url:
+    name_for_file = name_for_file.split("-", 1)[1]
 if is_url_extracted:
     with dpg.window(width=410, height=179, pos=(-5,0), no_title_bar=True, no_move=True, no_resize=True, tag="protocol"):
-        
         with dpg.child_window(pos=(0,0),height=35,width=410, tag="nav_bar", no_scroll_with_mouse=True, no_scrollbar=True):
             dpg.bind_item_theme(dpg.last_item(), transparent_child_window)
             dpg.add_progress_bar(default_value=1, width=365, height=35, pos=(5,0), tag="progress_bar"); dpg.bind_item_theme("progress_bar", progress_bar)
@@ -330,9 +343,9 @@ if is_url_extracted:
             pass
         
         dpg.add_input_text(enabled=False, default_value=f"{link_for_program}", width=383, pos=(13,43))
-        dpg.add_input_text(default_value=f"{name_for_file}", width=383, pos=(13,74), tag="select_name")
+        select_name = dpg.add_input_text(default_value=f"{name_for_file}", width=383, pos=(13,74), tag="select_name")
         dpg.add_combo([item['name'] for item in data],default_value=1, width=384, pos=(13,105), tag="select_folder")
-        dpg.set_value("select_folder", "-")
+        
         dpg.add_button(label="", width=35, height=35, pos=(13,136),callback=soundpad_button); dpg.bind_item_theme(dpg.last_item(), second_button)
         dpg.add_image("soundpad", width=25, height=25 , pos=(18,141))
         dpg.add_button(label="", width=342, height=35, pos=(55,136), tag="save_soundux", enabled=False, callback=soundux_button); dpg.bind_item_theme(dpg.last_item(), main_button)
@@ -354,8 +367,8 @@ else:
         dpg.add_combo([] if data is None else [item['name'] for item in data], tag="element_selector", width=300, pos=(13,45))
         dpg.add_button(label="Delete", width=79, pos=(319,45),callback=remove_element)
         
-        dpg.add_input_text(hint="Name", pos=(13,75), tag="Name_input", width=300)
-        dpg.add_input_text(hint="C:/Path/To/Folder", tag="Path-to-folder_input", pos=(13,105), width=345)
+        select_name = dpg.add_input_text(hint="Name", pos=(13,75), tag="Name_input", width=300)
+        select_folder_input = dpg.add_input_text(hint="C:/Path/To/Folder", tag="Path-to-folder_input", pos=(13,105), width=345)
         dpg.add_button(label="[/]", pos=(364,105), callback=select_folder)
         dpg.add_button(label="Add", width=79, pos=(319,75), callback=add_element)
         
@@ -383,6 +396,7 @@ else:
 dpg.bind_theme(dpg_theme.initialize())
 dpg.bind_font(default_font)
 dpg.set_frame_callback(5, Init_Before_UI_Init)
+dpg.set_frame_callback(60, Init_After_UI_Init)
 icon_path = os.path.join(data_folder,"logo","logo.ico")
 dpg.create_viewport(title="SPP-IN-Soundux", width=400, height=179, large_icon=icon_path, small_icon=icon_path, decorated=False, resizable=False, clear_color=[0, 0, 0, 0]) 
 dpg.setup_dearpygui() 
