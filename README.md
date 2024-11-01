@@ -12,4 +12,4 @@
 </h3>
 
 <br><br><br><br>
-<h6 align="center">v. 1.0.0 <br> Made with 💟 by Agzes</h6>
+<h6 align="center">v. 1.1.0 <br> Made with 💟 by Agzes</h6>
